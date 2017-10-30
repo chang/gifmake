@@ -3,8 +3,8 @@
 import os
 import re
 import subprocess
-from argparse import ArgumentParser
 
+import click
 import imageio
 
 from skimage.transform import resize
@@ -131,19 +131,36 @@ class ImageIO(object):
         subprocess.run(cmd, shell=True)
 
 
+@click.command()
+@click.argument('directory', type=click.Path(exists=True))
+@click.option('--name', type=str, help='The name of the output file.')
+@click.option('--max-size', type=int, default=600,
+              help='The maximum length in pixels of the longest edge.')
+@click.option('--fps', type=int, help='Frames per second for the GIF.')
+@click.option('--duration', help='Time in seconds for the duration of the .gif. Specify only a duration or an fps.')
+@click.option('--optimize', type=bool, default=True,
+              help='If True, use gifsicle to compress the output.')
+@click.option('--verbose', type=bool)
+def cli(directory, name, max_size, fps, duration, optimize, verbose):
+    """A command line application to create GIFs from directories of images."""
+    full_dir_path = os.path.realpath(directory)
+
+    # read images
+    io = ImageIO(directory=full_dir_path, name=name)
+    image_list = io.list_images(verbose=verbose)
+    images = io.read_images(image_list=image_list)
+
+    # process images
+    processor = ImageProcessor(max_size=max_size)
+    processed_images = processor.process_images(images=images)
+
+    # create name and write
+    io.create_gif(images=processed_images)
+
+    # optimize with gifsicle
+    if optimize:
+        io.optimize_gifsicle()
+
+
 if __name__ == "__main__":
-    parser = ArgumentParser(description='Creates a .gif from a directory of images')
-    parser.add_argument('directory', type=str, help='Directory containing the images')
-    parser.add_argument('--name', type=str, help='Name of the output .gif')
-    parser.add_argument(
-        '--duration', type=int, default=None,
-
-    )
-    parser.add_argument(
-        '--fps', type=int, default=None,
-        help='Frames per second for the .gif. Specify only a duration or an fps.'
-    )
-    kwargs = vars(parser.parse_args())
-
-    if kwargs['duration'] and kwargs['fps']:
-        raise ValueError('Cannot specify both --duration and --fps.')
+    cli()

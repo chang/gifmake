@@ -7,8 +7,7 @@ import os
 import shutil
 
 from click.testing import CliRunner
-from gifmake import cli
-from gifmake.gifmake import ImageIO
+from gifmake.gifmake import ImageIO, cli
 
 import pytest
 
@@ -50,16 +49,16 @@ def test_command_line_interface(image_directory):
     """Test the CLI."""
     runner = CliRunner()
 
-    result = runner.invoke(cli.main)
+    result = runner.invoke(cli)
     assert result.exit_code == 2, 'Should fail if no directory argument is provided'
 
-    result = runner.invoke(cli.main, ['test'])
+    result = runner.invoke(cli, ['test'])
     assert result.exit_code == 2, 'Should fail if invalid directory path is provided'
 
-    # result = runner.invoke(cli.main, [dirname])
+    # result = runner.invoke(cli, [dirname])
     # assert result.exit_code == 0, 'Should exit with error code 0 when called with valid path'
 
-    help_result = runner.invoke(cli.main, ['--help'])
+    help_result = runner.invoke(cli, ['--help'])
     assert help_result.exit_code == 0
     assert 'A command line application to create GIFs from directories of images.' in help_result.output
 
