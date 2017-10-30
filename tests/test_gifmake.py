@@ -45,6 +45,25 @@ def empty_directory():
     shutil.rmtree(dirname)
 
 
+@pytest.fixture(scope='module')
+def large_image_directory():
+    """Creates a temporary test .env file in the base directory."""
+    dirname = 'gifmake_pytest_large_dir'
+    assert not os.path.exists(dirname)
+
+    # create directory and populate with files
+    os.mkdir(dirname)
+    files = ['{}.png'.format(i) for i in range(200)]
+    for file in files:
+        with open(os.path.join(dirname, file), 'w') as fp:
+            fp.write('')
+
+    yield dirname
+
+    # teardown
+    shutil.rmtree(dirname)
+
+
 def test_command_line_interface(image_directory):
     """Test the CLI."""
     runner = CliRunner()
@@ -95,3 +114,8 @@ def test_list_images_empty_directory(empty_directory):
     io = ImageIO(directory=empty_directory)
     with pytest.raises(ValueError):
         io.list_images()
+
+
+def test_get_fps(large_image_directory):
+    io = ImageIO(directory=large_image_directory, duration=5)
+    assert 40 == io._get_fps(io.list_images())
