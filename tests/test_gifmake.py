@@ -79,7 +79,6 @@ def test_command_line_interface(image_directory):
 
     help_result = runner.invoke(cli, ['--help'])
     assert help_result.exit_code == 0
-    assert 'A command line application to create GIFs from directories of images.' in help_result.output
 
 
 def test_set_name(image_directory):

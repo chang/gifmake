@@ -6,8 +6,9 @@ import subprocess
 from abc import ABC, abstractmethod
 
 import click
-import imageio
+from gifmake.util import check_gifsicle_installation
 
+import imageio
 
 from skimage.transform import resize
 from tqdm import tqdm
@@ -16,12 +17,14 @@ VALID_EXTENSIONS = ['.png', '.jpg', '.jpeg']
 
 
 class ImageIO(object):
+    """Handles image reading and GIF writing"""
+
     def __init__(self, directory, name=None, duration=None, fps=None):
         self.directory = directory
         self.name = name
         self.duration = duration
         self.fps = fps
-        self._images = None
+        self._images = []
 
     @property
     def name(self):
@@ -50,6 +53,10 @@ class ImageIO(object):
         if not os.path.isdir(directory):
             raise ValueError('{} is not a valid directory.'.format(directory))
         self._directory = directory
+
+    @property
+    def file_path(self):
+        return os.path.join(self._directory, self._name)
 
     def list_images(self, verbose=True):
         """Lists all images in a directory"""
@@ -112,23 +119,22 @@ class ImageIO(object):
 
     def create_gif(self):
         print('Writing...')
-        file_path = os.path.join(self.directory, self.name)
         fps = self._get_fps(self._images)
 
-        with imageio.get_writer(file_path, mode='I', fps=fps) as writer:
+        with imageio.get_writer(self.file_path, mode='I', fps=fps) as writer:
             for image in tqdm(self._images):
                 writer.append_data(image)
         writer.close()
-        print('GIF written to: {file_path}'.format(file_path=file_path))
+        print('GIF written to: {file_path}'.format(file_path=self.file_path))
 
     def optimize_gifsicle(self):
-        file_path = os.path.join(self.directory, self.name)
         print('Optimizing using gifsicle...')
-        cmd = 'gifsicle --optimize {file_path} --colors 256 -o {file_path}'.format(file_path=file_path)
-        subprocess.run(cmd, shell=True)
+        cmd = 'gifsicle --optimize {file_path} --colors 256 -o {file_path}'.format(file_path=self.file_path)
+        with open(os.devnull, 'w') as devnull:
+            subprocess.run(cmd, shell=True, stdout=devnull, stderr=devnull)
 
 
-class AbstractImageProcessor(ABC):
+class ImageProcessor(ABC):
     @abstractmethod
     def process(self):
         pass
@@ -141,17 +147,18 @@ class AbstractImageProcessor(ABC):
         return processed
 
 
-class SkimageProcessor(AbstractImageProcessor):
-    def __init__(self, max_size=500):
+class SkimageProcessor(ImageProcessor):
+    def __init__(self, max_size):
         self.max_size = max_size
 
     def downsize(self, img):
-        x, y, _ = img.shape
-        max_size = max(img.shape)
-        if max_size > self.max_size:
-            scale = self.max_size / max_size
-            shape = (round(x * scale), round(y * scale))
-            img = resize(img, shape, mode='reflect')
+        if self.max_size:
+            max_size = max(img.shape)
+            if max_size > self.max_size:
+                scale = self.max_size / max_size
+                x, y, _ = img.shape
+                shape = (round(x * scale), round(y * scale))
+                img = resize(img, shape, mode='reflect')
         return img
 
     def png_to_jpg(self, img):
@@ -166,23 +173,30 @@ class SkimageProcessor(AbstractImageProcessor):
         return img
 
 
-@click.command()
-@click.argument('directory', type=click.Path(exists=True))
-@click.option('--name', type=str, help='The name of the output file.')
-@click.option('--max-size', type=int, default=600,
+@click.command(context_settings=dict(help_option_names=['-h', '--help']))
+@click.argument('directory', type=click.Path(exists=True), nargs=1)
+@click.option('-n', '--name', type=str, help='The name of the output file.')
+@click.option('--max-size', type=int, default=None,
               help='The maximum length in pixels of the longest edge.')
 @click.option('--fps', type=int, help='Frames per second for the GIF. Specify either a duration or an fps.')
-@click.option('--duration', type=int,
-              help='Time in seconds for the duration of the .gif. Specify either a duration or an fps.')
+@click.option('--d', '--duration', type=int,
+              help='Time in seconds for the duration of the GIF. Specify either a duration or an fps.')
 @click.option('--optimize', type=bool, default=True,
               help='If True, use gifsicle to compress the output.')
 @click.option('--verbose', type=bool, default=True)
 def cli(directory, name, max_size, fps, duration, optimize, verbose):
-    """A command line application to create GIFs from directories of images."""
+    """A command line utility to create GIFs from directories of images.
+
+    Ex: gifmake /directory_of_images --max-size 600 --fps 30
+    """
     full_dir_path = os.path.realpath(directory)
 
+    # TODO: do this in ImageIO
     if duration and fps:
         raise ValueError('Cannot specify both a duration and an FPS.')
+    if optimize:
+        check_gifsicle_installation()
+        click.echo('Skipping gifsicle compression.')
 
     # read images
     io = ImageIO(directory=full_dir_path, name=name, duration=duration, fps=fps)
