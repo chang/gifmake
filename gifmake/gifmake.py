@@ -3,7 +3,6 @@
 import os
 import re
 import subprocess
-from abc import ABC, abstractmethod
 
 import click
 from gifmake.util import check_gifsicle_installation
@@ -13,11 +12,11 @@ import imageio
 from skimage.transform import resize
 from tqdm import tqdm
 
-VALID_EXTENSIONS = ['.png', '.jpg', '.jpeg']
-
 
 class ImageIO(object):
-    """Handles image reading and GIF writing"""
+    """Handles image reading and GIF writing."""
+
+    VALID_EXTENSIONS = ['.png', '.jpg', '.jpeg']
 
     def __init__(self, directory, name=None, duration=None, fps=None):
         self.directory = directory
@@ -59,10 +58,10 @@ class ImageIO(object):
         return os.path.join(self._directory, self._name)
 
     def list_images(self, verbose=True):
-        """Lists all images in a directory"""
+        """List all images in a directory."""
         image_list = [os.path.join(self.directory, f) for f in os.listdir(self.directory)]
 
-        invalid_images = [x for x in image_list if os.path.splitext(x)[1] not in VALID_EXTENSIONS]
+        invalid_images = [x for x in image_list if os.path.splitext(x)[1] not in self.VALID_EXTENSIONS]
         image_list = [x for x in image_list if x not in invalid_images]
         if not image_list:
             raise ValueError('No images found in directory: {}'.format(self.directory))
@@ -71,7 +70,7 @@ class ImageIO(object):
             size = self._estimate_size(image_list)
             msg = ['',
                    'Found {n} images. Size: {size}MB'.format(n=len(image_list), size=size),
-                   'Excluding {n} non-image files:'.format(n=len(invalid_images)),
+                   'Skipping {n} non-image files...'.format(n=len(invalid_images)),
                    '\n'.join(invalid_images),
                    '']
             print('\n'.join(msg))
@@ -80,7 +79,7 @@ class ImageIO(object):
         return image_list
 
     def order_images(self, image_list):
-        """Orders image files numerically instead of lexographically"""
+        """Order image files numerically instead of lexographically."""
         numbered_imgs = []
         for image in image_list:
             matches = re.findall('[0-9]+', image)
@@ -91,13 +90,13 @@ class ImageIO(object):
         return [im for (_, im) in numbered_imgs]
 
     def _estimate_size(self, image_list):
-        """Returns estimated size in MB of all items in a list"""
-        bytes_in_mb = 1024 * 1024
+        """Return estimated size in MB of all items in a list."""
+        BYTES_IN_MB = 1024 * 1024
         total_bytes = sum([os.stat(x).st_size for x in image_list])
-        return round(total_bytes / bytes_in_mb, 2)
+        return round(total_bytes / BYTES_IN_MB, 2)
 
     def read_images(self, image_list):
-        """Reads and returns image data as a list of arrays"""
+        """Read and return image data as a list of arrays."""
         print('Reading images...')
         images = []
         for image_path in tqdm(image_list):
@@ -128,16 +127,16 @@ class ImageIO(object):
         print('GIF written to: {file_path}'.format(file_path=self.file_path))
 
     def optimize_gifsicle(self):
+        """Call gifsicle's --optimize function on the output image."""
         print('Optimizing using gifsicle...')
         cmd = 'gifsicle --optimize {file_path} --colors 256 -o {file_path}'.format(file_path=self.file_path)
         with open(os.devnull, 'w') as devnull:
             subprocess.run(cmd, shell=True, stdout=devnull, stderr=devnull)
 
 
-class ImageProcessor(ABC):
-    @abstractmethod
+class ImageProcessor:
     def process(self):
-        pass
+        raise NotImplementedError
 
     def process_images(self, images):
         processed = []
@@ -191,12 +190,10 @@ def cli(directory, name, max_size, fps, duration, optimize, verbose):
     """
     full_dir_path = os.path.realpath(directory)
 
-    # TODO: do this in ImageIO
     if duration and fps:
         raise ValueError('Cannot specify both a duration and an FPS.')
     if optimize:
         check_gifsicle_installation()
-        click.echo('Skipping gifsicle compression.')
 
     # read images
     io = ImageIO(directory=full_dir_path, name=name, duration=duration, fps=fps)
@@ -207,10 +204,8 @@ def cli(directory, name, max_size, fps, duration, optimize, verbose):
     processor = SkimageProcessor(max_size=max_size)
     io.process_images(processor=processor)
 
-    # create name and write
+    # create gif and optimize with gifsicle
     io.create_gif()
-
-    # optimize with gifsicle
     if optimize:
         io.optimize_gifsicle()
 
