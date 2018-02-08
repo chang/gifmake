@@ -1,3 +1,4 @@
+"""A simple command-line utility for creating GIFs from directories of images."""
 # -*- coding: utf-8 -*-
 
 import os
@@ -14,15 +15,30 @@ from tqdm import tqdm
 
 
 class ImageIO(object):
-    """Handles image reading and GIF writing."""
+    """Handles image reading and GIF writing.
+
+    Attributes
+    ----------
+        directory : str
+            Path to the directory containing images to be converted into a GIF.
+        name : str
+            Name of the output GIF.
+        duration : int
+            Duration of the GIF in seconds. Set either duration or fps.
+        fps : int
+            Frames Per Second.
+        verbose : int
+            Set to 0 to suppress verbose execution.
+    """
 
     VALID_EXTENSIONS = ['.png', '.jpg', '.jpeg']
 
-    def __init__(self, directory, name=None, duration=None, fps=None):
+    def __init__(self, directory, name=None, duration=None, fps=None, verbose=1):
         self.directory = directory
         self.name = name
         self.duration = duration
         self.fps = fps
+        self.verbose = verbose
         self._images = []
 
     @property
@@ -58,7 +74,17 @@ class ImageIO(object):
         return os.path.join(self._directory, self._name)
 
     def list_images(self, verbose=True):
-        """List all images in a directory."""
+        """List all images in a directory.
+
+        Parameters
+        ----------
+            verbose : bool
+                If True, execute verbosely.
+
+        Returns
+        -------
+            image_list : list of str
+        """
         image_list = [os.path.join(self.directory, f) for f in os.listdir(self.directory)]
 
         invalid_images = [x for x in image_list if os.path.splitext(x)[1] not in self.VALID_EXTENSIONS]
@@ -78,16 +104,26 @@ class ImageIO(object):
         image_list = self.order_images(image_list)
         return image_list
 
+    @staticmethod
     def order_images(self, image_list):
-        """Order image files numerically instead of lexographically."""
-        numbered_imgs = []
+        """Order image files numerically, instead of lexographically.
+
+        Parameters
+        ----------
+        image_list : list of str
+
+        Returns
+        -------
+        ordered_image_list : list of str
+        """
+        ordered_image_list = []
         for image in image_list:
             matches = re.findall('[0-9]+', image)
             if len(matches) > 1:
                 raise ValueError('File name numbering {file} is ambiguous.'.format(file=image))
-            numbered_imgs.append((int(matches[0]), image))
-        numbered_imgs = sorted(numbered_imgs)
-        return [im for (_, im) in numbered_imgs]
+            ordered_image_list.append((int(matches[0]), image))
+        ordered_image_list = sorted(ordered_image_list)
+        return [im for (_, im) in ordered_image_list]
 
     def _estimate_size(self, image_list):
         """Return estimated size in MB of all items in a list."""
@@ -117,14 +153,14 @@ class ImageIO(object):
         return fps
 
     def create_gif(self):
-        print('Writing...')
+        self._verbose_print('Writing...')
         fps = self._get_fps(self._images)
 
         with imageio.get_writer(self.file_path, mode='I', fps=fps) as writer:
             for image in tqdm(self._images):
                 writer.append_data(image)
         writer.close()
-        print('GIF written to: {file_path}'.format(file_path=self.file_path))
+        self._verbose_print('GIF written to: {file_path}'.format(file_path=self.file_path))
 
     def optimize_gifsicle(self):
         """Call gifsicle's --optimize function on the output image."""
@@ -133,8 +169,17 @@ class ImageIO(object):
         with open(os.devnull, 'w') as devnull:
             subprocess.run(cmd, shell=True, stdout=devnull, stderr=devnull)
 
+    def _verbose_print(self, msg):
+        if self.verbose > 0:
+            print(msg)
+
 
 class ImageProcessor:
+    """Base class for handling image processing.
+
+    All image preprocessing steps should be implemented as methods and included in
+    ImageProcessor.process(). ImageIO will then call process() on each image.
+    """
     def process(self):
         raise NotImplementedError
 
@@ -147,6 +192,15 @@ class ImageProcessor:
 
 
 class SkimageProcessor(ImageProcessor):
+    """Image processing with scikit-image.
+
+    Attributes
+    ----------
+    max_size : int
+        The maximum width or height in pixels of the output GIF.
+
+    TODO: Consider using lycon for speed.
+    """
     def __init__(self, max_size):
         self.max_size = max_size
 
