@@ -103,7 +103,7 @@ class ImageIO(object):
         return image_list
 
     @staticmethod
-    def order_images(self, image_list):
+    def order_images(image_list):
         """Order image files numerically, instead of lexographically.
 
         Parameters

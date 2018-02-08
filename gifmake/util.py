@@ -7,7 +7,7 @@ import warnings
 
 
 def gifsicle_installed():
-    """Returns boolean indicating if gifsicle is available as a shell command"""
+    """Return a bool indicating if gifsicle is available as a shell command."""
     with open(os.devnull, 'w') as devnull:
         out = subprocess.run('gifsicle', shell=True, stdout=devnull, stderr=devnull)
 
@@ -20,6 +20,7 @@ def gifsicle_installed():
 
 
 def check_gifsicle_installation():
+    """Check if gifsicle is installed. If not, display a message."""
     installed = gifsicle_installed()
     if not installed:
         msg = ['No gifsicle installation found.',
