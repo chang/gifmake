@@ -6,10 +6,8 @@ import re
 import subprocess
 
 import click
-from gifmake.util import check_gifsicle_installation
-
 import imageio
-
+from gifmake.util import check_gifsicle_installation
 from skimage.transform import resize
 from tqdm import tqdm
 
