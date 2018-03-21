@@ -15,18 +15,12 @@ from tqdm import tqdm
 class ImageIO(object):
     """Handles image reading and GIF writing.
 
-    Attributes
-    ----------
-        directory : str
-            Path to the directory containing images to be converted into a GIF.
-        name : str
-            Name of the output GIF.
-        duration : int
-            Duration of the GIF in seconds. Set either duration or fps.
-        fps : int
-            Frames Per Second.
-        verbose : int
-            Set to 0 to suppress verbose execution.
+    Attributes:
+        directory (str): Path to the directory containing images to be converted into a GIF.
+        name (str): Name of the output GIF.
+        duration (int): Duration of the GIF in seconds. Set either duration or fps.
+        fps (int): Frames Per Second.
+        verbose (int): Set to 0 to suppress verbose execution.
     """
 
     VALID_EXTENSIONS = ['.png', '.jpg', '.jpeg']
@@ -74,14 +68,11 @@ class ImageIO(object):
     def list_images(self, verbose=True):
         """List all images in a directory.
 
-        Parameters
-        ----------
-            verbose : bool
-                If True, execute verbosely.
+        Args:
+            verbose (int)
 
-        Returns
-        -------
-            image_list : list of str
+        Returns:
+            image_list (list of str): List of image file paths.
         """
         image_list = [os.path.join(self.directory, f) for f in os.listdir(self.directory)]
 
@@ -104,15 +95,13 @@ class ImageIO(object):
 
     @staticmethod
     def order_images(image_list):
-        """Order image files numerically, instead of lexographically.
+        """Order image files numerically instead of lexographically.
 
-        Parameters
-        ----------
-        image_list : list of str
+        Args:
+            image_list (list of str): List of image file paths.
 
-        Returns
-        -------
-        ordered_image_list : list of str
+        Returns:
+            ordered_image_list (list of str)
         """
         ordered_image_list = []
         for image in image_list:
@@ -192,10 +181,8 @@ class ImageProcessor:
 class SkimageProcessor(ImageProcessor):
     """Image processing with scikit-image.
 
-    Attributes
-    ----------
-    max_size : int
-        The maximum width or height in pixels of the output GIF.
+    Attributes:
+        max_size (int): The maximum width or height in pixels of the output GIF.
 
     TODO: Consider using lycon for speed.
     """
