@@ -15,4 +15,4 @@ before_script:
 # command to run tests, e.g. python setup.py test
 script:
   - pytest
-  - flake8 gifmake tests
+  - flake8 gifmake
