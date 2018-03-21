@@ -25,8 +25,8 @@ test_requirements = [
 
 setup(
     name='gifmake',
-    version='0.1.1',
-    description="A simple command line utility for creating GIFs with directories of images.",
+    version='0.1.2',
+    description="A simple command line utility for creating GIFs from directories of images.",
     # long_description="TODO: A long description",
     author="Eric Chang",
     author_email='ericchang00@gmail.com',
@@ -34,7 +34,7 @@ setup(
     packages=find_packages(include=['gifmake']),
     entry_points={
         'console_scripts': [
-            'gifmake=gifmake.gifmake:cli'
+            'gifmake=gifmake.cli:cli'
         ]
     },
     include_package_data=True,
