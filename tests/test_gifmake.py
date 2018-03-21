@@ -1,13 +1,15 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-"""Tests for `gifmake` package."""
-
 import os
 import shutil
+import sys
+
+# Resolve gifmake source path.
+src_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'gifmake')
+sys.path = [src_path] + sys.path
+print(sys.path)
 
 from click.testing import CliRunner
-from gifmake.gifmake import ImageIO, cli
+from image_processor import ImageIO
+from cli import cli
 
 import pytest
 
