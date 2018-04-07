@@ -1,6 +1,6 @@
 ## gifmake
 
-[![Build Status](https://travis-ci.org/ericchang00/gifmake.svg?branch=master)](https://travis-ci.org/ericchang00/gifmake)
+[![Build Status](https://travis-ci.org/ericchang00/gifmake.svg?branch=master)](https://travis-ci.org/ericchang00/gifmake) [![codecov](https://codecov.io/gh/ericchang00/gifmake/branch/master/graph/badge.svg)](https://codecov.io/gh/ericchang00/gifmake)
 
 A simple command line utility for creating GIFs from directories of images.
 
