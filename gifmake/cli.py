@@ -2,8 +2,8 @@ import os
 
 import click
 
-from gifmake.image_processor import ImageIO, SkimageProcessor
-from gifmake.util import check_gifsicle_installation
+from image_processor import ImageIO, SkimageProcessor
+from util import check_gifsicle_installation
 
 
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
