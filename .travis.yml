@@ -14,5 +14,8 @@ before_script:
 
 # command to run tests, e.g. python setup.py test
 script:
-  - pytest
+  - pytest --cov=gifmake
   - flake8 gifmake
+
+after_success:
+  - codecov
